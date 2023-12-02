@@ -11,7 +11,15 @@
 
         public static object RunPart1()
         {
-            var games = lines.Select((line, index) =>
+            var games = ParseGames();
+            var possibleGames = games.Where(g => g.MostRed <= TotalRed && g.MostGreen <= TotalGreen && g.MostBlue <= TotalBlue);
+
+            return possibleGames.Sum(g => g.Id);
+        }
+
+        private static List<Game> ParseGames()
+        {
+            return lines.Select((line, index) =>
             {
                 var startingCharacterIndex = line.IndexOf(':') + 2;
                 var red = 0;
@@ -42,10 +50,6 @@
                 return new Game(index + 1, red, green, blue);
             }).ToList();
 
-            var possibleGames = games.Where(g => g.MostRed <= TotalRed && g.MostGreen <= TotalGreen && g.MostBlue <= TotalBlue);
-
-            return possibleGames.Sum(g => g.Id);
-
             static int FindQuantity(string set, string color)
             {
                 var colorIndex = set.IndexOf(color);
@@ -68,7 +72,10 @@
 
         public static object RunPart2()
         {
-            return null;
+            var games = ParseGames();
+            var gamePowers = games.Select(g => g.MostRed * g.MostGreen * g.MostBlue);
+
+            return gamePowers.Sum();
         }
     }
 }
