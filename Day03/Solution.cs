@@ -7,7 +7,11 @@
             public static Position operator +(Position a, Position b) => new(a.X + b.X, a.Y + b.Y);
         }
 
+        private record struct Symbol(char Character, Position Position);
         private record class Number(int Value, List<Position> Positions);
+        private record class PartNumber(Symbol AdjacentSymbol, Number Number);
+        private record class Gear(Symbol Symbol, PartNumber PartNumber1, PartNumber PartNumber2);
+
 
         private static readonly string[] lines = File.ReadAllLines("Day03\\Input.txt");
         private static readonly Position[] relativeAdjacentPosition = [
@@ -24,43 +28,29 @@
 
         public static object RunPart1()
         {
-            (var symbolPositions, var numbers) = ParseSchematic();
-            var partNumbers = numbers.Where(n =>
-            {
-                foreach (var symbolPosition in symbolPositions)
-                {
-                    foreach (var relativeAdjacentPosition in relativeAdjacentPosition)
-                    {
-                        if (n.Positions.Contains(symbolPosition + relativeAdjacentPosition))
-                        {
-                            return true;
-                        }
-                    }
-                }
+            (var symbols, var numbers) = ParseSchematic();
+            var partNumbers = GetPartNumbers(symbols, numbers);
 
-                return false;
-            }).ToList();
-
-            return partNumbers.Sum(p => p.Value);
+            return partNumbers.Sum(p => p.Number.Value);
         }
 
-        private static (List<Position> symbolsPositions, List<Number> numbers) ParseSchematic()
+        private static (List<Symbol> symbols, List<Number> numbers) ParseSchematic()
         {
-            var symbolPositions = new List<Position>();
+            var symbols = new List<Symbol>();
             var numbers = new List<Number>();
 
             for (var i = 0; i < lines.Length; i++)
             {
                 (var symbolsInLine, var numbersInLine) = ParseLine(lines[i], i);
-                symbolPositions.AddRange(symbolsInLine);
+                symbols.AddRange(symbolsInLine);
                 numbers.AddRange(numbersInLine);
             }
 
-            return (symbolPositions, numbers);
+            return (symbols, numbers);
 
-            static (List<Position> symbolPositions, List<Number> numbers) ParseLine(string line, int lineIndex)
+            static (List<Symbol> symbols, List<Number> numbers) ParseLine(string line, int lineIndex)
             {
-                var symbolPositions = new List<Position>();
+                var symbols = new List<Symbol>();
                 var numbers = new List<Number>();
 
                 var parsingNumberValue = string.Empty;
@@ -84,13 +74,13 @@
                         continue;
                     }
 
-                    symbolPositions.Add(new Position(i, lineIndex));
+                    symbols.Add(new Symbol(character, new Position(i, lineIndex)));
                     ParseRemainingNumber();
                 }
 
                 ParseRemainingNumber();
 
-                return (symbolPositions, numbers);
+                return (symbols, numbers);
 
                 void ParseRemainingNumber()
                 {
@@ -105,9 +95,46 @@
             }
         }
 
+        private static List<PartNumber> GetPartNumbers(List<Symbol> symbols, List<Number> numbers)
+        {
+            var partNumbers = new List<PartNumber>();
+
+            foreach (var number in numbers)
+            {
+                foreach (var symbol in symbols)
+                {
+                    foreach (var relativeAdjacentPosition in relativeAdjacentPosition)
+                    {
+                        if (number.Positions.Contains(symbol.Position + relativeAdjacentPosition) && !partNumbers.Any(p => p.AdjacentSymbol == symbol && p.Number == number))
+                        {
+                            partNumbers.Add(new PartNumber(symbol, number));
+                        }
+                    }
+                }
+            }
+
+            return partNumbers;
+        }
+
         public static object RunPart2()
         {
-            return null;
+            (var symbols, var numbers) = ParseSchematic();
+            var partNumbers = GetPartNumbers(symbols, numbers);
+            const int PartNumbersNextToGear = 2;
+            var gears = new List<Gear>();
+
+            foreach (var symbol in symbols)
+            {
+                var adjacentPartNumbers = partNumbers
+                    .Where(p => p.AdjacentSymbol == symbol)
+                    .ToList();
+                if (adjacentPartNumbers.Count == PartNumbersNextToGear)
+                {
+                    gears.Add(new Gear(symbol, adjacentPartNumbers[0], adjacentPartNumbers[1]));
+                }
+            }
+
+            return gears.Sum(g => g.PartNumber1.Number.Value * g.PartNumber2.Number.Value);
         }
     }
 }
