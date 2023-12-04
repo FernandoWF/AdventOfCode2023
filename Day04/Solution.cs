@@ -13,8 +13,8 @@
 
             foreach (var scratchcard in scratchcards)
             {
-                var winningNumbersYouHaveCount = scratchcard.NumbersYouHave.Count(scratchcard.WinningNumbers.Contains);
-                var pointsWorth = (int)Math.Pow(2, winningNumbersYouHaveCount - 1);
+                var matchingNumbers = scratchcard.NumbersYouHave.Count(scratchcard.WinningNumbers.Contains);
+                var pointsWorth = (int)Math.Pow(2, matchingNumbers - 1);
                 totalPointsWorth += pointsWorth;
             }
 
@@ -51,7 +51,31 @@
 
         public static object RunPart2()
         {
-            return null;
+            var scratchcards = ParseScratchcards().ToList();
+            var scratchcardNumberQuantities = Enumerable.Repeat(1, scratchcards.Count).ToArray();
+
+            for (var screatchcardIndex = 0; screatchcardIndex < scratchcards.Count; screatchcardIndex++)
+            {
+                ProcessScratchCard(screatchcardIndex + 1, scratchcardNumberQuantities[screatchcardIndex]);
+            }
+
+            return scratchcardNumberQuantities.Sum();
+
+            void ProcessScratchCard(int number, int quantity)
+            {
+                var scratchcard = scratchcards[number - 1];
+                var matchingNumbers = scratchcard.NumbersYouHave.Count(scratchcard.WinningNumbers.Contains);
+
+                for (var i = 1; i <= matchingNumbers; i++)
+                {
+                    var copyNumber = number + i;
+                    var copyNumberIndex = copyNumber - 1;
+                    if (copyNumberIndex < scratchcards.Count)
+                    {
+                        scratchcardNumberQuantities[copyNumberIndex] += quantity;
+                    }
+                }
+            }
         }
     }
 }
