@@ -1,1 +1,1 @@
-﻿AdventOfCode2023.DayRunner<AdventOfCode2023.Day04.Solution>.Run();
+﻿AdventOfCode2023.DayRunner<AdventOfCode2023.Day05.Solution>.Run();
