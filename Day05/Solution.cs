@@ -7,17 +7,8 @@
         public static object RunPart1()
         {
             var almanac = ParseAlmanac();
-            return almanac.SeedsToBePlanted
-                .Select(s =>
-                {
-                    var soil = almanac.GetSoil(s);
-                    var fertilizer = almanac.GetFertilizer(soil);
-                    var water = almanac.GetWater(fertilizer);
-                    var light = almanac.GetLight(water);
-                    var temperature = almanac.GetTemperature(light);
-                    var humidity = almanac.GetHumidity(temperature);
-                    return almanac.GetLocation(humidity);
-                })
+            return almanac.SeedValues
+                .Select(s => GetLocation(s, almanac))
                 .Min();
         }
 
@@ -83,7 +74,7 @@
 
             return new Almanac
             {
-                SeedsToBePlanted = seeds,
+                SeedValues = seeds,
                 SeedToSoilMaps = seedToSoilMaps,
                 SoilToFertilizerMaps = soilToFertilizerMaps,
                 FertilizerToWaterMaps = fertilizerToWaterMaps,
@@ -104,9 +95,51 @@
             }
         }
 
+        private static long GetLocation(long seed, Almanac almanac)
+        {
+            var soil = almanac.GetSoil(seed);
+            var fertilizer = almanac.GetFertilizer(soil);
+            var water = almanac.GetWater(fertilizer);
+            var light = almanac.GetLight(water);
+            var temperature = almanac.GetTemperature(light);
+            var humidity = almanac.GetHumidity(temperature);
+            return almanac.GetLocation(humidity);
+        }
+
         public static object RunPart2()
         {
-            return null;
+            var almanac = ParseAlmanac();
+            var seedRanges = new List<(long start, long length)>();
+
+            for (var i = 0; i < almanac.SeedValues.Count; i += 2)
+            {
+                seedRanges.Add((almanac.SeedValues[i], almanac.SeedValues[i + 1]));
+            }
+
+            var lowestLocations = new long[seedRanges.Count];
+            var calculationActions = new Action[seedRanges.Count];
+            for (var i = 0; i < lowestLocations.Length; i++)
+            {
+                lowestLocations[i] = long.MaxValue;
+                var index = i;
+                calculationActions[i] = () => CalculateLocation(index, seedRanges[index].start, seedRanges[index].length, lowestLocations, almanac);
+            }
+
+            Parallel.Invoke(calculationActions);
+
+            return lowestLocations.Min();
+
+            static void CalculateLocation(int index, long rangeStart, long rangeLength, long[] lowestLocations, Almanac almanac)
+            {
+                for (var i = rangeStart; i < rangeStart + rangeLength; i++)
+                {
+                    var location = GetLocation(i, almanac);
+                    if (location < lowestLocations[index])
+                    {
+                        lowestLocations[index] = location;
+                    }
+                }
+            }
         }
     }
 }

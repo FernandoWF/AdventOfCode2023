@@ -10,7 +10,7 @@
 
     internal record class Almanac
     {
-        public required IReadOnlyList<long> SeedsToBePlanted { get; init; }
+        public required IReadOnlyList<long> SeedValues { get; init; }
         public required IReadOnlyList<Map> SeedToSoilMaps { get; init; }
         public required IReadOnlyList<Map> SoilToFertilizerMaps { get; init; }
         public required IReadOnlyList<Map> FertilizerToWaterMaps { get; init; }
