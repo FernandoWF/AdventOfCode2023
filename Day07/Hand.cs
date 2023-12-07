@@ -1,87 +1,94 @@
-﻿namespace AdventOfCode2023.Day07
+﻿using System.Diagnostics;
+
+namespace AdventOfCode2023.Day07
 {
-    internal enum HandType
-    {
-        HighCard,
-        OnePair,
-        TwoPair,
-        ThreeOfAKind,
-        FullHouse,
-        FourOfAKind,
-        FiveOfAKind
-    }
 
     internal class Hand : IComparable<Hand>
     {
-        private const int RequiredCardQuantity = 5;
+        private enum Type
+        {
+            HighCard,
+            OnePair,
+            TwoPair,
+            ThreeOfAKind,
+            FullHouse,
+            FourOfAKind,
+            FiveOfAKind
+        }
+
+        private const int CardCount = 5;
+
+        private readonly Type type;
 
         public IReadOnlyList<Card> Cards { get; }
         public int Bid { get; }
-        public HandType Type { get; }
 
         public Hand(IReadOnlyList<Card> cards, int bid)
         {
-            if (cards.Count != RequiredCardQuantity)
+            if (cards.Count != CardCount)
             {
                 throw new ArgumentException("Invalid card count.");
             }
 
             Cards = cards;
             Bid = bid;
-            Type = CalculateType();
+            type = CalculateType();
         }
 
-        private HandType CalculateType()
+        private Type CalculateType()
         {
-            var repeatedLabelsCount = 0;
-            var distinctLabels = new List<char>();
+            Dictionary<char, int> labelToCardCount;
 
-            foreach (var group in Cards.GroupBy(c => c.Label).ToList())
+            if (GameRules.Current == CamelCardsRules.Default)
             {
-                var elements = group.ToList();
-
-                if (!distinctLabels.Contains(group.Key))
+                labelToCardCount = MapLabelToCardCount(Cards);
+            }
+            else
+            {
+                var jokerCardCount = Cards.Count(c => c.Label == GameRules.JokerCardLabel);
+                if (jokerCardCount == CardCount)
                 {
-                    distinctLabels.Add(group.Key);
+                    return Type.FiveOfAKind;
                 }
 
-                if (elements.Count > 1)
+                labelToCardCount = MapLabelToCardCount(Cards.Where(c => c.Label != GameRules.JokerCardLabel));
+                var mostRepeatedLabel = labelToCardCount.MaxBy(m => m.Value).Key;
+                labelToCardCount[mostRepeatedLabel] += jokerCardCount;
+            }
+
+            var nonRepeatingCardCount = labelToCardCount.Keys.Distinct().Count();
+            var repeatingCardCount = labelToCardCount.Values.Where(c => c > 1).Sum();
+
+            return nonRepeatingCardCount switch
+            {
+                CardCount => Type.HighCard,
+                CardCount - 1 => Type.OnePair,
+                CardCount - 2 when repeatingCardCount == 3 => Type.ThreeOfAKind,
+                CardCount - 2 => Type.TwoPair,
+                CardCount - 3 when repeatingCardCount == 4 => Type.FourOfAKind,
+                CardCount - 3 => Type.FullHouse,
+                CardCount - 4 => Type.FiveOfAKind,
+                _ => throw new UnreachableException("Impossible count.")
+            };
+
+            static Dictionary<char, int> MapLabelToCardCount(IEnumerable<Card> cards)
+            {
+                var labelToCardCount = new Dictionary<char, int>();
+
+                foreach (var card in cards)
                 {
-                    repeatedLabelsCount += elements.Count;
+                    if (labelToCardCount.TryGetValue(card.Label, out int count))
+                    {
+                        labelToCardCount[card.Label] = ++count;
+                    }
+                    else
+                    {
+                        labelToCardCount.Add(card.Label, 1);
+                    }
                 }
-            }
 
-            if (repeatedLabelsCount == RequiredCardQuantity && distinctLabels.Count == 1)
-            {
-                return HandType.FiveOfAKind;
+                return labelToCardCount;
             }
-
-            if (repeatedLabelsCount == RequiredCardQuantity - 1 && distinctLabels.Count == 2)
-            {
-                return HandType.FourOfAKind;
-            }
-
-            if (distinctLabels.Count == 2)
-            {
-                return HandType.FullHouse;
-            }
-
-            if (repeatedLabelsCount == RequiredCardQuantity - 2 && distinctLabels.Count == 3)
-            {
-                return HandType.ThreeOfAKind;
-            }
-
-            if (distinctLabels.Count == 3)
-            {
-                return HandType.TwoPair;
-            }
-
-            if (repeatedLabelsCount == RequiredCardQuantity - 3 && distinctLabels.Count == 4)
-            {
-                return HandType.OnePair;
-            }
-
-            return HandType.HighCard;
         }
 
         public int CompareTo(Hand? other)
@@ -91,12 +98,12 @@
                 return 1;
             }
 
-            if (Type == other.Type)
+            if (type == other.type)
             {
                 return CompareByHighCard();
             }
 
-            return Type.CompareTo(other.Type);
+            return type.CompareTo(other.type);
 
             int CompareByHighCard()
             {
