@@ -27,9 +27,27 @@
             })
             .ToList();
 
+        public static List<Hand2> ParseHands2() => lines
+            .Select(l =>
+            {
+                var split = l.Split(' ');
+                var cards = split[0]
+                    .Select(c => new Part2Card(c))
+                    .ToList();
+                var bid = int.Parse(split[1]);
+
+                return new Hand2(cards, bid);
+            })
+            .ToList();
+
         public static object RunPart2()
         {
-            return null;
+            var hands = ParseHands2();
+            hands.Sort();
+
+            return hands
+                .Select((hand, index) => (hand, rank: index + 1))
+                .Sum(tuple => tuple.hand.Bid * tuple.rank);
         }
     }
 }

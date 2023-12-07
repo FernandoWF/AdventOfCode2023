@@ -1,25 +1,14 @@
 ﻿namespace AdventOfCode2023.Day07
 {
-    internal enum HandType
-    {
-        HighCard,
-        OnePair,
-        TwoPair,
-        ThreeOfAKind,
-        FullHouse,
-        FourOfAKind,
-        FiveOfAKind
-    }
-
-    internal class Hand : IComparable<Hand>
+    internal class Hand2 : IComparable<Hand2>
     {
         private const int RequiredCardQuantity = 5;
 
-        public IReadOnlyList<Card> Cards { get; }
+        public IReadOnlyList<Part2Card> Cards { get; private set; }
         public int Bid { get; }
         public HandType Type { get; }
 
-        public Hand(IReadOnlyList<Card> cards, int bid)
+        public Hand2(IReadOnlyList<Part2Card> cards, int bid)
         {
             if (cards.Count != RequiredCardQuantity)
             {
@@ -33,10 +22,21 @@
 
         private HandType CalculateType()
         {
-            var repeatedLabelsCount = 0;
             var distinctLabels = new List<char>();
+            var jCardsCount = Cards.Count(c => c.Label == 'J');
+            var repeatedLabelsCount = jCardsCount;
 
-            foreach (var group in Cards.GroupBy(c => c.Label).ToList())
+            if (repeatedLabelsCount == 5)
+            {
+                return HandType.FiveOfAKind;
+            }
+
+            var groups = Cards
+                .Where(c => c.Label != 'J')
+                .GroupBy(c => c.Label)
+                .OrderBy(g => g.Count());
+
+            foreach (var group in groups)
             {
                 var elements = group.ToList();
 
@@ -49,6 +49,11 @@
                 {
                     repeatedLabelsCount += elements.Count;
                 }
+            }
+
+            if (jCardsCount != 0 && repeatedLabelsCount == jCardsCount)
+            {
+                repeatedLabelsCount++;
             }
 
             if (repeatedLabelsCount == RequiredCardQuantity && distinctLabels.Count == 1)
@@ -84,7 +89,7 @@
             return HandType.HighCard;
         }
 
-        public int CompareTo(Hand? other)
+        public int CompareTo(Hand2? other)
         {
             if (other is null)
             {
@@ -114,22 +119,22 @@
             }
         }
 
-        public static bool operator <(Hand left, Hand right)
+        public static bool operator <(Hand2 left, Hand2 right)
         {
             return left.CompareTo(right) < 0;
         }
 
-        public static bool operator >(Hand left, Hand right)
+        public static bool operator >(Hand2 left, Hand2 right)
         {
             return left.CompareTo(right) > 0;
         }
 
-        public static bool operator <=(Hand left, Hand right)
+        public static bool operator <=(Hand2 left, Hand2 right)
         {
             return left.CompareTo(right) <= 0;
         }
 
-        public static bool operator >=(Hand left, Hand right)
+        public static bool operator >=(Hand2 left, Hand2 right)
         {
             return left.CompareTo(right) >= 0;
         }
