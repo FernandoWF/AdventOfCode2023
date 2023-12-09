@@ -6,15 +6,23 @@
 
         public static object RunPart1()
         {
+            static int getAllZerosSequenceReturnValue(List<int> sequence) => sequence[^1];
+            static int getOtherSequencesReturnValue(List<int> sequence, int nextValue) => nextValue + sequence[^1];
+
+            return CalculateExtrapolatedValuesSum(getAllZerosSequenceReturnValue, getOtherSequencesReturnValue);
+        }
+
+        private static int CalculateExtrapolatedValuesSum(Func<List<int>, int> getAllZerosSequenceReturnValue, Func<List<int>, int, int> getOtherSequencesReturnValue)
+        {
             var sequences = lines
                 .Select(l => l.Split(' ').Select(int.Parse).ToList())
                 .ToList();
-            var nextValues = sequences
-                .Select(GetNextValue);
 
-            return nextValues.Sum();
+            return sequences
+                .Select(GetNextValue)
+                .Sum();
 
-            static int GetNextValue(List<int> sequence)
+            int GetNextValue(List<int> sequence)
             {
                 var differenceSequence = new List<int>();
 
@@ -26,18 +34,21 @@
 
                 if (differenceSequence.All(n => n == 0))
                 {
-                    return sequence[^1];
+                    return getAllZerosSequenceReturnValue(sequence);
                 }
 
                 var differenceSequenceNextValue = GetNextValue(differenceSequence);
 
-                return differenceSequenceNextValue + sequence[^1];
+                return getOtherSequencesReturnValue(sequence, differenceSequenceNextValue);
             }
         }
 
         public static object RunPart2()
         {
-            return null;
+            static int getAllZerosSequenceReturnValue(List<int> sequence) => sequence[0];
+            static int getOtherSequencesReturnValue(List<int> sequence, int nextValue) => sequence[0] - nextValue;
+
+            return CalculateExtrapolatedValuesSum(getAllZerosSequenceReturnValue, getOtherSequencesReturnValue);
         }
     }
 }
