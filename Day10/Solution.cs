@@ -17,6 +17,12 @@
             var map = lines
                 .Select(l => l.ToCharArray())
                 .ToArray();
+
+            return MapPipeToConnections(map).Count / 2;
+        }
+
+        private static Dictionary<Pipe, HashSet<Pipe>> MapPipeToConnections(char[][] map)
+        {
             var mapLength = map[0].Length;
             Pipe startingPipe = default;
 
@@ -26,6 +32,7 @@
                 {
                     if (map[y][x] == 'S')
                     {
+                        map[y][x] = StartingPipeCharacter;
                         startingPipe = new Pipe(x, y, StartingPipeCharacter);
                     }
                 }
@@ -69,12 +76,58 @@
                 }
             }
 
-            return pipeToConnections.Count / 2;
+            return pipeToConnections;
         }
 
         public static object RunPart2()
         {
-            return null;
+            var map = lines
+                .Select(l => l.ToCharArray())
+                .ToArray();
+            var pipeToConnections = MapPipeToConnections(map);
+
+            var lowerX = pipeToConnections.Keys.MinBy(p => p.X).X;
+            var higherX = pipeToConnections.Keys.MaxBy(p => p.X).X;
+            var lowerY = pipeToConnections.Keys.MinBy(p => p.Y).Y;
+            var higherY = pipeToConnections.Keys.MaxBy(p => p.Y).Y;
+
+            var insideTileCount = 0;
+
+            for (var y = lowerY; y <= higherY; y++)
+            {
+                for (var x = lowerX; x <= higherX; x++)
+                {
+                    var character = map[y][x];
+                    var shouldCheckCharacter = character == '.' || !pipeToConnections.ContainsKey(new Pipe(x, y, character));
+
+                    if (shouldCheckCharacter && IsInside(x, y))
+                    {
+                        insideTileCount++;
+                    }
+                }
+            }
+
+            return insideTileCount;
+
+            bool IsInside(int tileX, int tileY)
+            {
+                var isInside = false;
+
+                for (int y = tileY + 1, x = tileX + 1; y <= higherY && x <= higherX; y++, x++)
+                {
+                    var character = map[y][x];
+
+                    if (character != '.' && character != 'L' && character != '7')
+                    {
+                        if (pipeToConnections.ContainsKey(new Pipe(x, y, character)))
+                        {
+                            isInside = !isInside;
+                        }
+                    }
+                }
+
+                return isInside;
+            }
         }
     }
 }
