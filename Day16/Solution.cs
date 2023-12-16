@@ -18,6 +18,11 @@
 
         public static object RunPart1()
         {
+            return CalculateEnergizedTileCount(new(0, 0, BeamDirection.Rightward));
+        }
+
+        private static int CalculateEnergizedTileCount(Beam startingBeam)
+        {
             var height = lines.Length;
             var width = lines[0].Length;
             var baseGrid = new char[width, height];
@@ -32,7 +37,7 @@
                 }
             }
 
-            var beams = new List<Beam> { new(0, 0, BeamDirection.Rightward) };
+            var beams = new List<Beam> { startingBeam };
 
             do
             {
@@ -96,24 +101,40 @@
             }
             while (beams.Count > 0);
 
-            var energizedTiles = 0;
+            var energizedTileCount = 0;
             for (var y = 0; y < height; y++)
             {
                 for (var x = 0; x < width; x++)
                 {
                     if (beamDirectionGrid[x, y] != BeamDirection.None)
                     {
-                        energizedTiles++;
+                        energizedTileCount++;
                     }
                 }
             }
 
-            return energizedTiles;
+            return energizedTileCount;
         }
 
         public static object RunPart2()
         {
-            return null;
+            var height = lines.Length;
+            var width = lines[0].Length;
+            var maximumEnergizedTileCount = 0;
+
+            for (var x = 0; x < width; x++)
+            {
+                maximumEnergizedTileCount = Math.Max(maximumEnergizedTileCount, CalculateEnergizedTileCount(new Beam(x, 0, BeamDirection.Downward)));
+                maximumEnergizedTileCount = Math.Max(maximumEnergizedTileCount, CalculateEnergizedTileCount(new Beam(x, height - 1, BeamDirection.Upward)));
+            }
+
+            for (var y = 0; y < height; y++)
+            {
+                maximumEnergizedTileCount = Math.Max(maximumEnergizedTileCount, CalculateEnergizedTileCount(new Beam(0, y, BeamDirection.Rightward)));
+                maximumEnergizedTileCount = Math.Max(maximumEnergizedTileCount, CalculateEnergizedTileCount(new Beam(width - 1, y, BeamDirection.Leftward)));
+            }
+
+            return maximumEnergizedTileCount;
         }
     }
 }
